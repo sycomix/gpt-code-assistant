@@ -80,7 +80,7 @@ def chunk_source_files(src_files: List[str]) -> ChunkResult:
 
 
 def chunk_source(content: str) -> List[str]:
-    lines = [line for line in content.split("\n")]
+    lines = list(content.split("\n"))
     chunks = []
     current_chunk = ""
     token_count = 0

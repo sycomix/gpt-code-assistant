@@ -25,21 +25,16 @@ def get_project_by_name(name: str) -> Optional[Project]:
         Project: project object
     """
     with read_only_session() as session:
-        project = session.query(Project).filter_by(name=name).first()
-        if project:
+        if project := session.query(Project).filter_by(name=name).first():
             return project
-        else:
-            console.print(f"Project with name - {name} does not exist.")
-            return None
+        console.print(f"Project with name - {name} does not exist.")
+        return None
 
 
 def list_all_projects():
     """List all projects created."""
     with read_only_session() as session:
-        projects = session.query(Project).all()
-        if not projects:
-            console.print("No projects found. Please create a project with `gpt-code-assistant create-project`.")
-        else:
+        if projects := session.query(Project).all():
             table = Table(title="Projects")
             table.add_column("Name", style="cyan", no_wrap=True)
             table.add_column("Path", style="green", no_wrap=True)
@@ -51,6 +46,8 @@ def list_all_projects():
                     project.created_at.strftime("%B %d, %Y, %I:%M %p"),
                 )
             console.print(table)
+        else:
+            console.print("No projects found. Please create a project with `gpt-code-assistant create-project`.")
 
 def create_project(name: str, path: str):
     """ Check if project already exists with this path.
@@ -66,12 +63,9 @@ def create_project(name: str, path: str):
         project = session.query(Project).filter_by(path=path).first()
         if project and project.name == name:
             console.print(f"Project already exists at {path}.")
-        elif project and project.name != name:
+        elif project:
             console.print(f"Updating project name from {project.name} to {name}")
             project.name = name
-        elif project and project.path != path:
-            console.print(f"Updating project path from {project.path} to {path}")
-            project.path = path
         else:
             console.print(f"Creating new project - {name} at {path}")
             project = Project(name=name, path=path)
@@ -91,8 +85,7 @@ def delete_project(name: str):
         name (str): Project name
     """
     with read_write_session() as session:
-        project = session.query(Project).filter_by(name=name).first()
-        if project:
+        if project := session.query(Project).filter_by(name=name).first():
             console.print(f"Deleting embeddings for project - {project.name}")
             delete_all_file_section_embeddings(project.id)
             console.print(f"Deleting project - {project.name} at {project.path}")
@@ -109,8 +102,7 @@ def reindex_project(name: str):
         name (str): Project name
     """
     with read_write_session() as session:
-        project = session.query(Project).filter_by(name=name).first()
-        if project:
+        if project := session.query(Project).filter_by(name=name).first():
             delete_all_file_section_embeddings(project.id)
             console.print(f"Reindexing project - {project.name} at {project.path}")
             index_project(project)

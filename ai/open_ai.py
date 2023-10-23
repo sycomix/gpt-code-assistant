@@ -34,12 +34,9 @@ def moderate(text: str) -> bool:
 
 # Hack to get around OpenAI API rate limits - Eventually need this - https://github.com/openai/openai-cookbook/blob/3115683f14b3ed9570df01d721a2b01be6b0b066/examples/api_request_parallel_processor.py
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-def create_embedding(text) :
+def create_embedding(text):
     response = openai.Embedding.create(input=text, model="text-embedding-ada-002")
-    if response is not None:
-        embedding = response["data"][0]["embedding"]
-        return embedding
-    return None
+    return response["data"][0]["embedding"] if response is not None else None
 
 def get_available_models() -> List:
     token_mapping = {"16k": 14000, "32k": 30000}
@@ -57,31 +54,30 @@ def query_llm(project_name: str, query: str):
     project = get_project_by_name(project_name)
     if project is None:
         return
-    else:
-        messages = [build_initial_system_message(), build_initial_user_message(project.id, query)]
-        buffer = StringIO()
-        with Halo(text='Loading response', spinner='dots'):
-            try:
-                response = openai.ChatCompletion.create(
-                    model=load_selected_model(),
-                    messages=[message.dict() for message in messages],
-                    stream=True,
-                    temperature=0,
-                )
-                result = ""
-                for chunk in response:
-                    content = chunk["choices"][0]["delta"].get("content")
-                    if content is not None:
-                        result += content
-                buffer.write(result)
-            except requests.exceptions.HTTPError as http_err:
-                logging.error(f"HTTP error occurred during ChatCompletion request: {http_err}")
-                logging.error(f"Response content: {response.content}")
-                return http_err
-            except Exception as e:
-                logging.error("Unable to generate ChatCompletion response due to the following exception:")
-                logging.error(f"Exception: {e}")
-                return e
+    messages = [build_initial_system_message(), build_initial_user_message(project.id, query)]
+    buffer = StringIO()
+    with Halo(text='Loading response', spinner='dots'):
+        try:
+            response = openai.ChatCompletion.create(
+                model=load_selected_model(),
+                messages=[message.dict() for message in messages],
+                stream=True,
+                temperature=0,
+            )
+            result = ""
+            for chunk in response:
+                content = chunk["choices"][0]["delta"].get("content")
+                if content is not None:
+                    result += content
+            buffer.write(result)
+        except requests.exceptions.HTTPError as http_err:
+            logging.error(f"HTTP error occurred during ChatCompletion request: {http_err}")
+            logging.error(f"Response content: {response.content}")
+            return http_err
+        except Exception as e:
+            logging.error("Unable to generate ChatCompletion response due to the following exception:")
+            logging.error(f"Exception: {e}")
+            return e
     console.print(Markdown(buffer.getvalue()))
     buffer.close()
 

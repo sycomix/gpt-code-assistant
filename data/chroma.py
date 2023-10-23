@@ -15,8 +15,8 @@ client = chromadb.PersistentClient(path=f"{BASE_DIR}/chroma/", settings=Settings
 
 def get_file_section_collection(project_id: UUID):
     return client.get_or_create_collection(
-        str(project_id) + "-file_sections",
-        embedding_function=openai_embedding_function
+        f"{str(project_id)}-file_sections",
+        embedding_function=openai_embedding_function,
     )
 
 def delete_all_file_section_embeddings(project_id: UUID):

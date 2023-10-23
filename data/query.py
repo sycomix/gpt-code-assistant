@@ -27,8 +27,7 @@ def match_file_sections(project_id: UUID, query_embedding) -> List[MatchResult]:
     matches = []
     with read_only_session() as session:
         for result in query_results:
-            file_section = session.query(FileSection).get(result['id'])
-            if file_section:
+            if file_section := session.query(FileSection).get(result['id']):
                 file = session.query(File).options(joinedload(File.file_sections)).get(file_section.file_id)
                 final_result = MatchResult(
                     path=file.path,
